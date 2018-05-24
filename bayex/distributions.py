@@ -9,7 +9,7 @@ distributions are also callable with no arguments as they are also
 conditional distributions with empty conditioning set.
 """
 
-import abc
+import collections
 
 
 class Marginal(dict):
@@ -25,6 +25,16 @@ class Marginal(dict):
     def __repr__(self):
         'As a dict prefixed by "m"'
         return 'm' + dict.__repr__(self)
+
+    @staticmethod
+    def from_mixture(items):
+        'Construct by summing dists in (p, dist) with weights p'
+        result = collections.defaultdict(lambda: 0)
+        for dist, p_dist in items:
+            for value, p_value in dist.items():
+                result[value] += p_value * p_dist
+        return Marginal(result)
+
 
 
 class Constant(Marginal):
@@ -52,14 +62,4 @@ class Uniform(Marginal):
         probs = [1 / n] * n
         vpdict = {v: p for p, v in zip(probs, values)}
         Marginal.__init__(self, vpdict)
-
-
-class Conditional(metaclass=abc.ABCMeta):
-
-    def __init__(self, func):
-        self._n = n_conditioning_variables
-
-    @abc.abstractmethod
-    def __call__(*conditioning_variables):
-        "Return a marginal distribution from here"
 

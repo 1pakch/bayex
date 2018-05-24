@@ -2,7 +2,7 @@ import networkx as nx
 from collections import Counter
 from itertools import product
 
-from .distributions import Marginal, Conditional
+from .distributions import Marginal
 from .marginalize import marginalize
 
 
