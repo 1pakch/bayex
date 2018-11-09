@@ -2,8 +2,8 @@
 
 Bayex is a Python package implementing directed Bayesian networks over
 finitely-supported distributions. It was built to calculate the
-likelihoods of recessive diseases in consanguineous families (
-[resulting figures](https://github.com/ilya-kolpakov/bayex/blob/dirty/plots/all.pdf).
+likelihoods of recessive diseases in consanguineous families
+(see [resulting figures](https://github.com/ilya-kolpakov/bayex/blob/dirty/plots/all.pdf)).
 The package quite unique in that it can calculate probabilities of
 interest [*symbolically*](#symbolic-computations) if one uses [SymPy][sympy]
 expressions as distribution parameters.
