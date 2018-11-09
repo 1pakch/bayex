@@ -1,7 +1,8 @@
 import pandas as pd
 
 from bayex import marginalize
-from bayex.mendelian import unrelated, first_cousins, Genotype
+from bayex.mendelian import Genotype
+from bayex.families import unrelated, first_cousins
 
 
 def create_families(default_genotype):
