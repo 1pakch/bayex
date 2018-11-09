@@ -1,4 +1,5 @@
 from bayex.mendelian import *
+from bayex.families import *
 
 
 def test_unrelated_hw():
