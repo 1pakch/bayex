@@ -26,6 +26,14 @@ class Marginal(dict):
         'As a dict prefixed by "m"'
         return 'm' + dict.__repr__(self)
 
+    def simplify(self):
+        'Simplify state probabilities given as sympy symbolic expressions'
+        return Marginal({k: expr.simplify() for k, expr in self.items()})
+
+    def eval(self, subs):
+        'Evaluate sympy symbolic expression'
+        return Marginal({k: float(expr.subs(subs).evalf()) for k, expr in self.items()})
+
     @staticmethod
     def from_mixture(items):
         'Construct by summing dists in (p, dist) with weights p'

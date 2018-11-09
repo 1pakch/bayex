@@ -37,23 +37,32 @@ class Genotype(Marginal):
         return Genotype({'AA': p**2, 'Aa': 2*p*q, 'aa': q**2})
 
 
-def _gen_offspring_genotypes_dist():
+def _gen_offspring_genotypes_dist(aa=True):
     "Distribution of a child's genotype given these of parents (as a dict)"
     table = {}
     # Iterate over possible combinations of parents' genotypes
     for gt_father, gt_mother in product(Genotypes, Genotypes):
         # the list of (equiprobable) child's genotypes given g1 and g2
-        gts = map(genotype, product(gt_father, gt_mother))
+        gts = [genotype((fg, mg)) for fg, mg in product(gt_father, gt_mother)]
+        # Remove aa 
+        if not aa:
+            gts = [gt for gt in gts if not gt == 'aa']
+        n = len(gts)
         # conditional distribution the child genotype given g1 and g2
-        dist = {gt: count/4 for gt, count in Counter(gts).items()}
+        dist = {gt: count/n for gt, count in Counter(gts).items()}
         # store this conditional distribution under g1 and g2
         table[gt_father, gt_mother] = Genotype(dist)
     return table
 
-_cdist = _gen_offspring_genotypes_dist()
+_cdist1 = _gen_offspring_genotypes_dist(aa=True)
 def inherit(gt_father, gt_mother):
     "Conditional distribution of a child's genotype given these of parents"
-    return _cdist[gt_father, gt_mother]
+    return _cdist1[gt_father, gt_mother]
+
+_cdist2 = _gen_offspring_genotypes_dist(aa=False)
+def inherit_no_aa(gt_father, gt_mother):
+    "Conditional distribution of a child's genotype given these of parents"
+    return _cdist2[gt_father, gt_mother]
 
 
 class FamilyTree(nx.DiGraph):
@@ -76,50 +85,42 @@ class FamilyTree(nx.DiGraph):
             raise self._exception('default allele distribution is not set')
         return self._default_genotype
 
-    def add_unrelated(self, name, genotype=None, **kwargs):
-        if genotype is None:
-            genotype = self.default_genotype
-        self.add_node(name, genotype=genotype, **kwargs)
-        return name
+    def _name(self):
+        return str(self.number_of_nodes())
 
-    def add_child(self, parent1, parent2, name):
-        self.add_node(name, genotype=inherit)
-        self.add_edge(parent1, name)
-        self.add_edge(parent2, name)
-        return name
-
-    def add_children(self, parent1, parent2, names):
+    def add_unrelated(self, name=None, **kwargs):
+        return self.add_unrelateds([name])[0]
+    
+    def add_unrelateds(self, names=[None, None], **kwargs):
+        _names = []
         for name in names:
-            self.add_child(parent1, parent2, name)
-        return names
+            if name is None:
+                name = self._name()
+            self.add_node(name, genotype=self._default_genotype, **kwargs)
+            _names.append(name)
+        return _names
+
+    def add_child(self, parent1=None, parent2=None, name=None, inherit=inherit):
+        return self.add_children(parent1, parent2, [name], inherit=inherit)[0]
+
+    def add_children(self, parent1=None, parent2=None, names=[None, None],
+                     inherit=inherit):
+        if parent1 is None:
+            parent1 = self.add_unrelated()
+        if parent2 is None:
+            parent2 = self.add_unrelated()
+        _names = []
+        for name in names:
+            if name is None:
+                name = self._name()
+            self.add_node(name, genotype=inherit)
+            self.add_edge(parent1, name)
+            self.add_edge(parent2, name)
+            _names.append(name)
+        return _names
 
     def infer_genotype(self, name):
         return marginalize(self, name, 'genotype')
 
 
-def unrelated(name='unrelated', default=None, father=None, mother=None):
-    "A family where the offspring's parents are unrelated"
-    fam = FamilyTree(name=name, default_genotype=default)
-    f = fam.add_unrelated('father', dist=father)
-    m = fam.add_unrelated('mother', dist=mother)
-    fam.add_child(f, m, 'offspring')
-    return fam
 
-
-def first_cousins(name='first_cousins', default=None):
-    "A family where the offspring's parents are first cousins"
-    fam = FamilyTree(name=name, default_genotype=default)
-    # Shared grandgrandparents
-    fam.add_unrelated('ggf')
-    fam.add_unrelated('ggm')
-    # Share grandparents
-    fam.add_children('ggf', 'ggm', ['gp1', 'gp2'])
-    # Unrelated grandparents
-    fam.add_unrelated('gp1_spouse')
-    fam.add_unrelated('gp2_spouse')
-    # First cousins that produce offsprings
-    fam.add_child('gp1', 'gp1_spouse', 'f')
-    fam.add_child('gp2', 'gp2_spouse', 'm')
-    # Their offspring
-    fam.add_child('f', 'm', 'offspring')
-    return fam
