@@ -4,3 +4,4 @@
 **/*.swo
 **/.pytest_cache/**
 **/*.egg-info/**
+.ipynb*/**
