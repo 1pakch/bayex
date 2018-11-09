@@ -15,6 +15,8 @@ let
     pandas
     sympy
     notebook
+    matplotlib
+    seaborn
   ];
 
 in pyp.buildPythonPackage rec {
